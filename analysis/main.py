@@ -6,9 +6,9 @@ from scikits.audiolab import wavread
 
 from segment import band_powers
 
-FREQS = [15000, 20000, 25000, 30000, 35000, 40000, 45000]
+SAMPLE_DURATIONS = [0.015]
+FREQS = [25000, 35000, 45000]
 PULSE_DURATION = 0.05
-SAMPLE_DURATION = 0.02
 
 def normalize_angle(angle):
 	while not -180 <= angle < 180:
@@ -32,7 +32,7 @@ def get_files(references):
 				azimuth_files[azimuth] += files
 	return azimuth_files
 
-def extract_powers(azimuth_files, sample_duration=SAMPLE_DURATION):
+def extract_powers(azimuth_files, sample_duration):
 	azimuth_by_freq = {}
 	for f in FREQS:
 		azimuth_by_freq[f] = {}
@@ -82,22 +82,22 @@ def plot_gain_pattern(azimuth_powers, db_azimuths_freqs, filename):
 		powers_smooth = spline(azimuths, powers, azimuths_smooth)
 		ax.plot(azimuths_smooth, powers_smooth, '-', label=str(freq))
 		ax.set_theta_zero_location('N')
-		ax.set_ylim(-70, 10)
+		ax.set_ylim(-70, 40)
 		ax.set_xticks(np.arange(0, 360, 10) * (np.pi / 180))
-		ax.set_yticks(np.arange(-70, 30, 10))
+		ax.set_yticks(np.arange(-70, 40, 10))
 		ax.set_rlabel_position(-np.pi / 2)
 		# ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
 		#           ncol=len(FREQS), mode="expand", borderaxespad=0, prop={'size': 6})
 	plt.savefig(filename)
 	plt.close()
 
-def analysis(references, sample_duration=SAMPLE_DURATION):
+def analysis(references, sample_duration):
 	azimuth_files = get_files(references)
 	azimuth_powers = extract_powers(azimuth_files, sample_duration)
 	db_azimuths_freqs = normalize(azimuth_powers)
 	plot_gain_pattern(
 		azimuth_powers,
-		db_azimuths_freqs, '../output/analysis-mean-sample-%s.png' % (sample_duration)
+		db_azimuths_freqs, '../output/analysis-mean-sample-%s-ultrafreqs.png' % (sample_duration)
 	)
 
 if __name__ == "__main__":
@@ -105,5 +105,5 @@ if __name__ == "__main__":
 		"../2017-7-12/azimuth-2.csv": "../2017-7-12/azimuth-2/DR0000_%s.wav",
 		"../2017-7-12/azimuth-1.csv": "../2017-7-12/azimuth-1/DR0000_%s.wav",
 	}
-	for d in xrange(5,55,5):
-		analysis(references, 0.001 * d)
+	for d in SAMPLE_DURATIONS:
+		analysis(references, d)
