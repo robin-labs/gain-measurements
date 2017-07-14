@@ -6,9 +6,9 @@ from scikits.audiolab import wavread
 
 from segment import band_powers
 
-SAMPLE_DURATIONS = [0.015, 0.05]
-FREQS = [25000, 30000, 35000, 40000]
-PULSE_DURATION = 0.05
+SAMPLE_DURATIONS = [d * 0.001 for d in xrange(10, 65)]
+FREQS = [25000, 30000, 35000, 40000, 45000]
+PULSE_DURATION = 0.06
 SWEEP_DURATION = 0.2
 
 def normalize_angle(angle):
@@ -100,13 +100,13 @@ def analysis(references, sample_duration):
 	db_azimuths_freqs = normalize(azimuth_powers)
 	plot_gain_pattern(
 		azimuth_powers,
-		db_azimuths_freqs, '../output/uh-maybe-%s.png' % (sample_duration)
+		db_azimuths_freqs, '../output/doot-%s.png' % (sample_duration)
 	)
 
 if __name__ == "__main__":
 	references = {
 		"../samples/2017-7-12/azimuth-2.csv": "../samples/2017-7-12/azimuth-2/DR0000_%s.wav",
-		"../samples/2017-7-12/azimuth-1.csv": "../samples/2017-7-12/azimuth-1/DR0000_%s.wav",
+		"../samples/2017-7-12/azimuth-1-mini.csv": "../samples/2017-7-12/azimuth-1/DR0000_%s.wav",
 	}
 	for d in SAMPLE_DURATIONS:
 		analysis(references, d)
