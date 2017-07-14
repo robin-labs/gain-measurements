@@ -29,7 +29,8 @@ def band_powers(data, fs, freqs, pulse_duration,
 		for channel in xrange(data.shape[1]):
 			band = bandpass(data[:,channel], freq - bandwidth, freq + bandwidth, fs, 3)
 			tone_start = np.argmax(moving_average(band, pulse_length)) - pulse_length
-			tones.append(tone_start)
+			if channel == 0:
+				tones.append(tone_start)
 			avg_powers.append(
 				(1.0 / pulse_length) * np.sum(
 					band[tone_start:tone_start+sample_length] ** 2
@@ -38,6 +39,6 @@ def band_powers(data, fs, freqs, pulse_duration,
 		powers[freq] = np.mean(avg_powers)
 	if debug:
 		plt.plot(np.array(tones) / fs, freqs, 'bx')
-		plt.specgram(data, Fs=fs, NFFT=1024)
+		plt.specgram(data[:,0], Fs=fs, NFFT=1024)
 		plt.show()
 	return powers
