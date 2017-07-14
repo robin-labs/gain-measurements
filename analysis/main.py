@@ -100,7 +100,7 @@ def analysis(references, sample_duration):
 	db_azimuths_freqs = normalize(azimuth_powers)
 	plot_gain_pattern(
 		azimuth_powers,
-		db_azimuths_freqs, '../output/doot-%s.png' % (sample_duration)
+		db_azimuths_freqs, '../output/okay-%s.png' % (sample_duration)
 	)
 
 if __name__ == "__main__":
