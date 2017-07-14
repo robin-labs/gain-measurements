@@ -6,9 +6,10 @@ from scikits.audiolab import wavread
 
 from segment import band_powers
 
-SAMPLE_DURATIONS = [0.01]
-FREQS = [25000, 35000, 45000]
+SAMPLE_DURATIONS = [0.015, 0.05]
+FREQS = [25000, 30000, 35000, 40000]
 PULSE_DURATION = 0.05
+SWEEP_DURATION = 0.2
 
 def normalize_angle(angle):
 	while not -180 <= angle < 180:
@@ -39,33 +40,34 @@ def extract_powers(azimuth_files, sample_duration):
 	for a in sorted(azimuth_files):
 		for file in azimuth_files[a]:
 			data, fs, enc = wavread(file)
-			print "Calculating azimuth powers", a
+			print "Calculating azimuth powers", a, file
 			powers = band_powers(data, fs, FREQS,
-				PULSE_DURATION, sample_duration, debug=True)
+				PULSE_DURATION, sample_duration, SWEEP_DURATION, debug=False)
 			for f in powers:
 				if not azimuth_by_freq[f].get(a):
 					azimuth_by_freq[f][a] = []
 				azimuth_by_freq[f][a].append(powers[f])
 	return azimuth_by_freq
 
-def normalize_band(azimuths, zero_point):
+def normalize_band(azimuths):
 	assert azimuths[0]
 	for a in azimuths:
 		azimuths[a] = np.median(azimuths[a])
 	db_azimuths = {}
 	for a in azimuths:
-		db_azimuths[a] = 10 * np.log10(azimuths[a] / zero_point)
+		db_azimuths[a] = 10 * np.log10(azimuths[a] / azimuths[0])
 	return db_azimuths
 
-def normalize(azimuth_powers, zero_point):
+def normalize(azimuth_powers):
 	db_azimuths_freqs = {}
 	for freq in azimuth_powers:
-		db_azimuths_freqs[freq] = normalize_band(azimuth_powers[freq], zero_point)
+		db_azimuths_freqs[freq] = normalize_band(azimuth_powers[freq])
 	return db_azimuths_freqs
 
 def plot_gain_pattern(azimuth_powers, db_azimuths_freqs, filename):
 	ax = plt.subplot(111, projection='polar')
 	for freq in sorted(db_azimuths_freqs):
+		rel = 10 * np.log10(azimuth_powers[freq][0] / azimuth_powers[FREQS[0]][0])
 		powers_dict = db_azimuths_freqs[freq]
 		azimuths = np.array(map(normalize_angle,sorted(powers_dict.keys())))
 		# Aaaaaaah --- we need azimuths to be monotonic for splice to work
@@ -73,10 +75,11 @@ def plot_gain_pattern(azimuth_powers, db_azimuths_freqs, filename):
 		azimuths = np.roll(azimuths, slice_index)
 		powers = np.roll(
 			np.array(
-				[powers_dict[p] for p in sorted(powers_dict.keys())]
+				[powers_dict[p] + rel for p in sorted(powers_dict.keys())]
 			),
 			slice_index
 		)
+		print azimuths, powers
 		azimuths_smooth = np.linspace(azimuths.min(), azimuths.max(), 1e3)
 		powers_smooth = spline(azimuths, powers, azimuths_smooth)
 		ax.plot(azimuths_smooth, powers_smooth, '-', label=str(freq))
@@ -84,7 +87,7 @@ def plot_gain_pattern(azimuth_powers, db_azimuths_freqs, filename):
 		ax.set_ylim(-70, 40)
 		ax.set_xticks(np.arange(0, 360, 10) * (np.pi / 180))
 		ax.set_yticks(np.arange(-70, 40, 10))
-		ax.set_rlabel_position(-np.pi / 2)
+		# ax.set_rlabel_position(-np.pi / 2)
 		# ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
 		#           ncol=len(FREQS), mode="expand", borderaxespad=0, prop={'size': 6})
 	plt.savefig(filename)
@@ -93,16 +96,17 @@ def plot_gain_pattern(azimuth_powers, db_azimuths_freqs, filename):
 def analysis(references, sample_duration):
 	azimuth_files = get_files(references)
 	azimuth_powers = extract_powers(azimuth_files, sample_duration)
-	db_azimuths_freqs = normalize(azimuth_powers, np.mean(azimuth_powers[25000][0]))
+	print azimuth_powers
+	db_azimuths_freqs = normalize(azimuth_powers)
 	plot_gain_pattern(
 		azimuth_powers,
-		db_azimuths_freqs, '../output/analysis-median-sample-%s-ultrafreqs.png' % (sample_duration)
+		db_azimuths_freqs, '../output/uh-maybe-%s.png' % (sample_duration)
 	)
 
 if __name__ == "__main__":
 	references = {
-		# "../samples/2017-7-12/azimuth-2.csv": "../samples/2017-7-12/azimuth-2/DR0000_%s.wav",
-		"../samples/2017-7-12/azimuth-1-mini.csv": "../samples/2017-7-12/azimuth-1/DR0000_%s.wav",
+		"../samples/2017-7-12/azimuth-2.csv": "../samples/2017-7-12/azimuth-2/DR0000_%s.wav",
+		"../samples/2017-7-12/azimuth-1.csv": "../samples/2017-7-12/azimuth-1/DR0000_%s.wav",
 	}
 	for d in SAMPLE_DURATIONS:
 		analysis(references, d)
