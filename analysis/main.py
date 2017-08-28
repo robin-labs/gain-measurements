@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import spline
 from scikits.audiolab import wavread
 
-from segment import band_powers
+from segment import band_powers, band_powers_many
 
-SAMPLE_DURATIONS = [d * 0.001 for d in xrange(10, 65)]
-FREQS = [25000, 30000, 35000, 40000, 45000]
-PULSE_DURATION = 0.06
+N_ITERATIONS = 15
+SAMPLE_DURATIONS = [0.005] #[d * 0.001 for d in xrange(10, 65)]
+FREQS = [x * 1000 for x in range(15, 50, 5)]
+PULSE_DURATION = 0.005
 SWEEP_DURATION = 0.2
 
 def normalize_angle(angle):
@@ -41,8 +42,9 @@ def extract_powers(azimuth_files, sample_duration):
 		for file in azimuth_files[a]:
 			data, fs, enc = wavread(file)
 			print "Calculating azimuth powers", a, file
-			powers = band_powers(data, fs, FREQS,
-				PULSE_DURATION, sample_duration, SWEEP_DURATION, debug=False)
+			powers = band_powers_many(data, N_ITERATIONS, fs, FREQS,
+				PULSE_DURATION, sample_duration, SWEEP_DURATION, debug=True)
+			continue
 			for f in powers:
 				if not azimuth_by_freq[f].get(a):
 					azimuth_by_freq[f][a] = []
@@ -100,13 +102,12 @@ def analysis(references, sample_duration):
 	db_azimuths_freqs = normalize(azimuth_powers)
 	plot_gain_pattern(
 		azimuth_powers,
-		db_azimuths_freqs, '../output/okay-%s.png' % (sample_duration)
+		db_azimuths_freqs, '../output/2017-07-16/better-test-%s.png' % (sample_duration)
 	)
 
 if __name__ == "__main__":
 	references = {
-		"../samples/2017-7-12/azimuth-2.csv": "../samples/2017-7-12/azimuth-2/DR0000_%s.wav",
-		"../samples/2017-7-12/azimuth-1-mini.csv": "../samples/2017-7-12/azimuth-1/DR0000_%s.wav",
+		"../samples/2017-07-16/azimuth-1.csv": "../samples/2017-07-16/azimuth-1/DR0000_%s.wav",
 	}
 	for d in SAMPLE_DURATIONS:
 		analysis(references, d)
